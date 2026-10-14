@@ -1,0 +1,6 @@
+{
+  "name": "MJS Accounting & Consulting",
+  "description": "Comprehensive accounting, taxation, and consulting services for UAE businesses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
