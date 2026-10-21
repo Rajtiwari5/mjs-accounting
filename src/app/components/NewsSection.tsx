@@ -59,6 +59,15 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.12 }}
               whileHover={{ y: -8 }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Read article: ${article.title}`}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectArticle(article);
+                }
+              }}
               onClick={() => onSelectArticle(article)}
               className="group cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:border-red-300 transition-all duration-300 flex flex-col justify-between"
             >
@@ -76,15 +85,15 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
                   </div>
 
                   {/* Official PDF Document Badge */}
-                  {article.id === "news-sbr-2029" && (
+                  {article.document && (
                     <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-slate-900 bg-amber-50 border border-amber-300 px-3 py-1.5 rounded-lg text-amber-900">
                       <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                      <span>📄 Includes Official Ministerial Decision No. 131 PDF</span>
+                      <span>Includes source PDF</span>
                     </div>
                   )}
 
                   {/* Meta Info: Date / Author */}
-                  <div className="flex items-center gap-4 text-xs text-slate-500 font-medium mb-3">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium mb-3">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={13} className="text-[#c8102e]" />
                       {article.date}
@@ -132,18 +141,18 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
               <Sparkles size={24} />
             </div>
             <div>
-              <h4 className="text-lg font-bold font-serif text-white">Need Customized Advisory on UAE Cabinet Decision 129?</h4>
+              <h4 className="text-lg font-bold font-serif text-white">Can Your Business Recover VAT on Employee Expenses?</h4>
               <p className="text-slate-300 text-xs sm:text-sm mt-0.5">
-                Our experts at MJS Accounting & Auditing assist entities in voluntary disclosures, penalty waivers, and eInvoicing ERP setup.
+                Review the six expense categories, policy requirements and supporting records in FTA Decision No. 17 of 2026.
               </p>
             </div>
           </div>
 
           <button
-            onClick={() => onSelectArticle(NEWS_ARTICLES[0])}
+            onClick={() => onSelectArticle(NEWS_ARTICLES.find((article) => article.id === "news-fta-17-2026")!)}
             className="bg-[#c8102e] hover:bg-[#a60d25] text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg transition-all flex items-center gap-2 shrink-0 group whitespace-nowrap"
           >
-            <span>Read Penalty Update Guide</span>
+            <span>Read Employee Expenses Guide</span>
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
           </button>
         </motion.div>

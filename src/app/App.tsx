@@ -1280,6 +1280,7 @@ export default function App() {
 
       {/* Interactive Search Modal */}
       <SearchModal
+        onSelectArticle={setSelectedArticle}
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigate={(page, serviceId) => navigate(page, serviceId)}

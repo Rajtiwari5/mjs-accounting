@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import React, { useEffect, useRef, useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
 import {
   X,
   Calendar,
@@ -25,7 +25,6 @@ interface NewsDetailModalProps {
   onClose: () => void;
   onSelectArticle: (article: NewsArticle) => void;
   onConsultationRequest: () => void;
-  onOpenPdf?: () => void;
 }
 
 export function NewsDetailModal({
@@ -33,25 +32,19 @@ export function NewsDetailModal({
   onClose,
   onSelectArticle,
   onConsultationRequest,
-  onOpenPdf,
 }: NewsDetailModalProps) {
   const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
 
-  // Prevent body scrolling when modal is open
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (article) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
-    };
-  }, [article]);
+    setIsPdfModalOpen(false);
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [article?.id]);
 
   if (!article) return null;
 
-  const relatedArticles = NEWS_ARTICLES.filter((a) => a.id !== article.id);
+  const relatedArticles = NEWS_ARTICLES.filter((a) => a.id !== article.id).slice(0, 3);
 
   const handleWhatsAppInquiry = () => {
     const text = `Hello MJS Accounting! 👋\n\nI read your article: *${article.title}*\n\nI would like to request expert consultation regarding our business compliance in the UAE.`;
@@ -59,34 +52,16 @@ export function NewsDetailModal({
     window.open(whatsappUrl, "_blank");
   };
 
-  const handleOpenPdf = () => {
-    if (onOpenPdf) {
-      onOpenPdf();
-    } else {
-      setIsPdfModalOpen(true);
-    }
-  };
+  const handleOpenPdf = () => setIsPdfModalOpen(true);
 
   return (
     <>
-      <AnimatePresence>
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto bg-slate-950/80 backdrop-blur-md">
-          {/* Backdrop click */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="fixed inset-0"
-          />
-
-          {/* Modal Window Container */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
-            className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-10 max-h-[92vh] flex flex-col my-auto"
+      <Dialog.Root open={!!article} onOpenChange={(open) => { if (!open) onClose(); }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md" />
+          <Dialog.Content
+            aria-describedby={undefined}
+            className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
           >
             {/* Top Sticky Bar */}
             <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0">
@@ -114,7 +89,7 @@ export function NewsDetailModal({
             </div>
 
             {/* Modal Content Scrollable Area */}
-            <div className="p-6 sm:p-10 overflow-y-auto space-y-8">
+            <div ref={scrollRef} className="p-6 sm:p-10 overflow-y-auto space-y-8">
               {/* Header Title & Meta */}
               <div className="space-y-4 border-b border-slate-100 pb-6">
                 <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500">
@@ -132,21 +107,27 @@ export function NewsDetailModal({
                   </span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-slate-900 leading-tight">
+                <Dialog.Title asChild><h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-slate-900 leading-tight">
                   {article.title}
-                </h1>
+                </h1></Dialog.Title>
 
-                {/* PDF OPEN BUTTON HIGHLIGHT */}
-                <div className="pt-2">
-                  <button
-                    onClick={handleOpenPdf}
-                    className="w-full sm:w-auto bg-[#c8102e] hover:bg-[#a60d25] text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg hover:shadow-red-500/30 transition-all flex items-center justify-center gap-3 group border border-red-500/50"
-                  >
-                    <FileDown size={20} className="text-white group-hover:scale-110 transition-transform" />
-                    <span>📄 Open Official Ministerial Decision No. 131 PDF Document</span>
-                    <ExternalLink size={14} className="opacity-80" />
-                  </button>
-                </div>
+                {article.effectiveDate && (
+                  <p className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-[#a60d25]">
+                    Effective: {article.effectiveDate}
+                  </p>
+                )}
+
+                {article.document && (
+                  <div className="space-y-3 pt-2">
+                    <button onClick={handleOpenPdf} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#c8102e] px-5 py-3 text-sm font-bold text-white hover:bg-[#a60d25] sm:w-auto">
+                      <FileDown size={18} className="shrink-0" /> View {article.document.title} PDF
+                    </button>
+                    <p className="text-xs text-slate-500">{article.document.note}</p>
+                    <a href={article.document.url} download={article.document.fileName} className="inline-flex items-center gap-2 text-sm font-bold text-[#c8102e] hover:underline">
+                      <FileDown size={16} /> Download original PDF
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Executive Summary Box */}
@@ -156,13 +137,7 @@ export function NewsDetailModal({
                     <FileText size={16} />
                     Executive Summary
                   </div>
-                  <button
-                    onClick={handleOpenPdf}
-                    className="text-xs font-bold text-[#c8102e] bg-white border border-red-200 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5"
-                  >
-                    <FileText size={13} />
-                    <span>View Official PDF</span>
-                  </button>
+
                 </div>
                 <p className="text-sm sm:text-base leading-relaxed font-medium">
                   {article.content.summary}
@@ -170,6 +145,33 @@ export function NewsDetailModal({
               </div>
 
             {/* Main Article Content Sections */}
+            {(article.sources || article.graphics) && (
+              <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <h2 className="font-serif text-lg font-bold text-slate-900">Source documents & MJS briefing</h2>
+                {article.sources?.map((source) => (
+                  <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer" className="flex items-start gap-2 text-sm font-semibold text-[#c8102e] hover:underline">
+                    <ExternalLink size={16} className="mt-0.5 shrink-0" /><span>{source.label}</span>
+                  </a>
+                ))}
+                {article.editorialNote && <p className="text-sm leading-relaxed text-slate-600">{article.editorialNote}</p>}
+                {article.graphics && (
+                  <details className="rounded-xl border border-slate-200 bg-white p-4">
+                    <summary className="cursor-pointer text-sm font-bold text-[#c8102e]">View MJS briefing graphics ({article.graphics.length})</summary>
+                    <div className="mt-4 space-y-6">
+                      {article.graphics.map((graphic) => (
+                        <figure key={graphic.src} className="space-y-2">
+                          <a href={graphic.src} target="_blank" rel="noopener noreferrer" aria-label={`Open full-size image: ${graphic.caption}`}>
+                            <img src={graphic.src} alt={graphic.alt} loading="lazy" className="h-auto w-full rounded-lg border border-slate-200" />
+                          </a>
+                          <figcaption className="text-xs leading-relaxed text-slate-500">{graphic.caption} Select the image to open it at full size.</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+            )}
+
             <div className="space-y-8 text-slate-700 text-sm sm:text-base leading-relaxed font-sans">
               {article.content.sections.map((section, idx) => (
                 <div key={idx} className="space-y-3">
@@ -270,13 +272,13 @@ export function NewsDetailModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {relatedArticles.map((rel) => (
-                  <div
+                  <button
+                    type="button"
                     key={rel.id}
                     onClick={() => {
                       onSelectArticle(rel);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
-                    className="p-4 rounded-xl border border-slate-200 hover:border-red-500 hover:bg-red-50/40 cursor-pointer transition-all space-y-2 group"
+                    className="text-left p-4 rounded-xl border border-slate-200 hover:border-red-500 hover:bg-red-50/40 cursor-pointer transition-all space-y-2 group"
                   >
                     <span className="text-[10px] font-bold text-[#c8102e] uppercase tracking-wider">
                       {rel.category}
@@ -287,20 +289,22 @@ export function NewsDetailModal({
                     <span className="text-[11px] text-slate-400 block font-mono">
                       {rel.date}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
           </div>
-        </motion.div>
-      </div>
-      </AnimatePresence>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
-      <PdfViewerModal
-        isOpen={isPdfModalOpen}
-        onClose={() => setIsPdfModalOpen(false)}
-        documentTitle={article.title}
-      />
+      {article.document && (
+        <PdfViewerModal
+          isOpen={isPdfModalOpen}
+          onClose={() => setIsPdfModalOpen(false)}
+          document={article.document}
+        />
+      )}
     </>
   );
 }

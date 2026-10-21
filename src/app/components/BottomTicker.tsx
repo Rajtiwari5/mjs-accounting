@@ -13,6 +13,8 @@ export function BottomTicker({ onConsultationRequest, onSelectHeadline }: Bottom
   if (isDismissed) return null;
 
   const tickerItems = [
+    "FTA Decision No. 17 of 2026 • Employee-expense input tax recovery conditions effective 1 October 2026 • Read the update and source PDF",
+    "Cabinet Decision No. 149 of 2026 • VAT Executive Regulation amendments • Separate commencement for Article 55 apportionment rules",
     "🎉 Small Business Relief Extended Until 31 December 2029 (Ministerial Decision No. 131 of 2026) • Revenue ≤ AED 3M Qualifies for 0% Tax Liability",
     "🔥 Check Your ERP, Invoice Data and VAT Logic Before It Is Too Late • Get Your Readiness Assessment",
     "🚨 30 October 2026: UAE E-Invoicing ASP Appointment Deadline • Is Your Business Ready?",

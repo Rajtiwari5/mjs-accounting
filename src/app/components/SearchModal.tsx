@@ -1,29 +1,39 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Search, X, ChevronRight, BookOpen, FileText, Shield, TrendingUp, Building2, HelpCircle } from "lucide-react";
 
+import { NEWS_ARTICLES, type NewsArticle } from "../data/newsData";
+
 interface SearchModalProps {
+  onSelectArticle: (article: NewsArticle) => void;
   isOpen: boolean;
   onClose: () => void;
   onNavigate: (page: "home" | "about" | "services" | "updates" | "contact", serviceId?: string) => void;
 }
 
 const SEARCH_ITEMS = [
+  ...NEWS_ARTICLES.map((article) => ({ type: "Update", title: article.title, desc: article.excerpt, id: article.id, category: "updates" })),
   { type: "Service", title: "Accounting & Bookkeeping", desc: "Financial accounting, bookkeeping, payroll WPS & MIS reports", id: "accounting", category: "services" },
   { type: "Service", title: "VAT Compliance & Registration", desc: "VAT filing, returns, refunds, FTA reconsiderations", id: "vat", category: "services" },
   { type: "Service", title: "Corporate Tax Advisory", desc: "Impact assessment, tax registration, returns, 9% CT compliance", id: "corporate-tax", category: "services" },
   { type: "Service", title: "Internal Audit & Risk Controls", desc: "Governance, risk assessment, compliance reviews", id: "internal-audit", category: "services" },
   { type: "Service", title: "Business Advisory & Company Formation", desc: "Free zone setup, AML compliance, ESR, ICV certification", id: "advisory", category: "services" },
-  { type: "Update", title: "Small Business Relief Extended (Dec 2029)", desc: "Ministerial Decision No. 131 of 2026 extending 0% tax threshold", id: "sbr-update", category: "updates" },
-  { type: "Update", title: "UAE Tax Penalty Update (Cabinet Decision 129)", desc: "Voluntary disclosures and revised penalty tiers", id: "penalty-update", category: "updates" },
-  { type: "Update", title: "UAE eInvoicing Phase 1 Mandate", desc: "Peppol continuous transaction controls & ERP integration", id: "einvoicing-update", category: "updates" },
   { type: "FAQ", title: "VAT Registration Requirements in UAE", desc: "Thresholds: AED 375,000 mandatory, AED 187,500 voluntary", id: "faq-vat", category: "contact" },
   { type: "FAQ", title: "Corporate Tax Deadlines & Rates", desc: "0% below AED 375k profit, 9% above AED 375k profit", id: "faq-ct", category: "contact" },
   { type: "Contact", title: "Office Location & Direct Contacts", desc: "Sama Residence M-02, Al Nahda 1, Dubai, UAE", id: "location", category: "contact" },
 ];
 
-export function SearchModal({ isOpen, onClose, onNavigate }: SearchModalProps) {
+export function SearchModal({ isOpen, onClose, onNavigate, onSelectArticle }: SearchModalProps) {
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -48,6 +58,7 @@ export function SearchModal({ isOpen, onClose, onNavigate }: SearchModalProps) {
             <Search size={20} className="text-slate-400" />
             <input
               type="text"
+              aria-label="Search the site"
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -55,6 +66,7 @@ export function SearchModal({ isOpen, onClose, onNavigate }: SearchModalProps) {
               className="w-full bg-transparent text-slate-800 placeholder-slate-400 text-sm font-medium focus:outline-none"
             />
             <button
+              aria-label="Close search"
               onClick={onClose}
               className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors"
             >
@@ -74,7 +86,12 @@ export function SearchModal({ isOpen, onClose, onNavigate }: SearchModalProps) {
                   key={idx}
                   onClick={() => {
                     onClose();
-                    onNavigate(item.category as any, item.id);
+                    if (item.type === "Update") {
+                      const article = NEWS_ARTICLES.find((article) => article.id === item.id);
+                      if (article) onSelectArticle(article);
+                    } else {
+                      onNavigate(item.category as "services" | "contact", item.id);
+                    }
                   }}
                   className="w-full text-left p-3.5 rounded-xl hover:bg-red-50/50 transition-colors flex items-center justify-between group pt-3"
                 >

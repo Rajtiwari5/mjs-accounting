@@ -1,3 +1,13 @@
+import { VAT_UPDATES } from "./vatUpdates";
+
+export interface ArticleDocument {
+  title: string;
+  url: string;
+  fileName: string;
+  note: string;
+  previewPages?: string[];
+}
+
 export interface NewsArticle {
   id: string;
   slug: string;
@@ -10,6 +20,11 @@ export interface NewsArticle {
   excerpt: string;
   commentsCount: number;
   featured?: boolean;
+  effectiveDate?: string;
+  document?: ArticleDocument;
+  sources?: { label: string; url: string }[];
+  graphics?: { src: string; alt: string; caption: string }[];
+  editorialNote?: string;
   content: {
     summary: string;
     sections: {
@@ -23,6 +38,7 @@ export interface NewsArticle {
 }
 
 export const NEWS_ARTICLES: NewsArticle[] = [
+  ...VAT_UPDATES,
   {
     id: "news-sbr-2029",
     slug: "uae-small-business-relief-extended-2029",

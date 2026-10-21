@@ -23,18 +23,11 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const categories = [
-    "All",
-    "Corporate Tax & Relief",
-    "Tax & Compliance",
-    "Digital Transformation & Tax",
-    "E-Invoicing & ERP Integration",
-    "Corporate Tax",
-  ];
+  const categories = ["All", ...new Set(NEWS_ARTICLES.map((article) => article.category))];
 
   const filteredArticles = NEWS_ARTICLES.filter((art) => {
     const matchesCategory =
-      selectedCategory === "All" || art.category.toLowerCase().includes(selectedCategory.toLowerCase());
+      selectedCategory === "All" || art.category === selectedCategory;
     const matchesSearch =
       art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       art.excerpt.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,9 +73,10 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
               <Filter size={14} />
               <span>Filter:</span>
             </div>
-            {categories.slice(0, 4).map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
+                aria-pressed={selectedCategory === cat}
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                   selectedCategory === cat
@@ -96,10 +90,11 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
           </div>
 
           {/* Search Input */}
-          <div className="relative w-full md:w-80">
+          <div className="relative w-full md:w-80 md:shrink-0">
             <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
+              aria-label="Search updates"
               placeholder="Search updates by keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -118,7 +113,7 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
             <div className="lg:col-span-8 space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-600/20 border border-red-500/40 text-red-300 text-xs font-bold uppercase tracking-wider">
                 <Sparkles size={14} className="text-red-400" />
-                <span>Featured Breakthrough Regulatory Update</span>
+                <span>Latest VAT Update</span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-serif text-white leading-tight">
                 {NEWS_ARTICLES[0].title}
@@ -141,7 +136,7 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
                   onClick={() => onSelectArticle(NEWS_ARTICLES[0])}
                   className="bg-[#c8102e] hover:bg-[#a60d25] text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2"
                 >
-                  <span>Read Full Executive Directive</span>
+                  <span>Read Full Update</span>
                   <ArrowRight size={16} />
                 </button>
               </div>
@@ -149,16 +144,16 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
             <div className="lg:col-span-4 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl space-y-4">
               <div className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <FileText size={16} />
-                Official Gazette Gazette Release
+                Source Document & MJS Briefing
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Complete legal breakdown including official Ministerial Decision PDF viewer, FTA election requirements, and revenue threshold criteria.
+                {NEWS_ARTICLES[0].document?.note ?? "Read the regulatory summary and linked source materials."}
               </p>
               <button
                 onClick={() => onSelectArticle(NEWS_ARTICLES[0])}
                 className="w-full text-center bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-xl transition-colors"
               >
-                View Legal Document & Analysis
+                View Source & Analysis
               </button>
             </div>
           </motion.div>
@@ -174,6 +169,15 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: idx * 0.08 }}
               whileHover={{ y: -6 }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Read update: ${article.title}`}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onSelectArticle(article);
+                }
+              }}
               onClick={() => onSelectArticle(article)}
               className="group cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 transition-all flex flex-col justify-between"
             >
@@ -188,14 +192,14 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
                   </span>
                 </div>
 
-                {article.id === "news-sbr-2029" && (
+                {article.document && (
                   <div className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 px-2.5 py-1 rounded-lg">
                     <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
-                    <span>Includes Official Ministerial Decision PDF</span>
+                    <span>Includes source PDF</span>
                   </div>
                 )}
 
-                <div className="flex items-center gap-4 text-xs text-slate-500 font-medium mb-3">
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium mb-3">
                   <span className="flex items-center gap-1.5">
                     <Calendar size={13} className="text-[#c8102e]" />
                     {article.date}
