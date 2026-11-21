@@ -1,1 +1,7 @@
-/*    /index.html   200
+# Netlify equivalent of the redirects in vercel.json (the live site is on Vercel).
+/home        /          301
+/about       /aboutus   301
+/about-us    /aboutus   301
+/news        /updates   301
+/contactus   /contact   301
+/contact-us  /contact   301

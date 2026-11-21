@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Menu,
@@ -33,7 +33,7 @@ import {
 } from "lucide-react";
 import logo1 from "./components/public/logo1.png";
 import logo2 from "./components/public/logo2.png";
-import mjsFavicon from "./components/public/mjs.png";
+import { type Page, PAGE_TO_PATH, PATH_TO_PAGE, applyPageHead } from "./seo";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { Testimonials } from "./components/Testimonials";
 import { ClientLogos } from "./components/ClientLogos";
@@ -51,29 +51,24 @@ import { TopBar } from "./components/TopBar";
 import { UpdatesPage } from "./components/UpdatesPage";
 import { NEWS_ARTICLES, NewsArticle } from "./data/newsData";
 
-type Page = "home" | "about" | "services" | "updates" | "contact";
-
-const PATH_TO_PAGE: Record<string, Page> = {
-  "/": "home",
-  "/home": "home",
-  "/aboutus": "about",
-  "/about": "about",
-  "/about-us": "about",
-  "/services": "services",
-  "/updates": "updates",
-  "/news": "updates",
-  "/contact": "contact",
-  "/contactus": "contact",
-  "/contact-us": "contact",
-};
-
-const PAGE_TO_PATH: Record<Page, string> = {
-  home: "/",
-  about: "/aboutus",
-  services: "/services",
-  updates: "/updates",
-  contact: "/contact",
-};
+// Real <a href> links so search engines can discover every page; normal clicks stay in-app.
+function pageLink(
+  page: Page,
+  navigate: (p: Page, sectionId?: string) => void,
+  options: { sectionId?: string; onNavigate?: () => void } = {},
+) {
+  const { sectionId, onNavigate } = options;
+  return {
+    href: sectionId ? `${PAGE_TO_PATH[page]}#${sectionId}` : PAGE_TO_PATH[page],
+    onClick: (e: MouseEvent<HTMLAnchorElement>) => {
+      // Let the browser handle new-tab / new-window clicks.
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      navigate(page, sectionId);
+      onNavigate?.();
+    },
+  };
+}
 
 const NAV_LINKS: { label: string; page: Page }[] = [
   { label: "Home", page: "home" },
@@ -141,16 +136,17 @@ function Navbar({
 
       <nav className="max-w-7xl mx-auto px-6 lg:px-8 flex items-center justify-between h-20">
         {/* Logo */}
-        <button onClick={() => navigate("home")} className="flex items-center gap-3 text-left">
+        <a {...pageLink("home", navigate)} className="flex items-center gap-3 text-left">
           <img src={logo1} alt="MJS Accounting & Auditing Logo" className="h-11 md:h-14 w-auto object-contain" />
-        </button>
+        </a>
 
         {/* Desktop nav */}
         <ul className="hidden md:flex items-center gap-6 lg:gap-8">
           {NAV_LINKS.map(({ label, page }) => (
             <li key={page}>
-              <button
-                onClick={() => navigate(page)}
+              <a
+                {...pageLink(page, navigate)}
+                aria-current={current === page ? "page" : undefined}
                 className={`text-sm md:text-base transition-colors relative py-1 flex flex-col items-center ${
                   current === page
                     ? "text-[#c8102e] font-bold"
@@ -164,7 +160,7 @@ function Navbar({
                     className="h-[3px] w-6 bg-[#c8102e] rounded-full mt-1"
                   />
                 )}
-              </button>
+              </a>
             </li>
           ))}
         </ul>
@@ -219,11 +215,9 @@ function Navbar({
             <ul className="px-6 py-4 space-y-2">
               {NAV_LINKS.map(({ label, page }) => (
                 <li key={page}>
-                  <button
-                    onClick={() => {
-                      navigate(page);
-                      setOpen(false);
-                    }}
+                  <a
+                    {...pageLink(page, navigate, { onNavigate: () => setOpen(false) })}
+                    aria-current={current === page ? "page" : undefined}
                     className={`w-full text-left px-4 py-3 rounded-lg text-sm font-semibold transition-colors flex items-center justify-between ${
                       current === page
                         ? "text-[#c8102e] bg-red-50/60"
@@ -232,7 +226,7 @@ function Navbar({
                   >
                     <span>{label}</span>
                     {current === page && <div className="w-2 h-2 rounded-full bg-[#c8102e]" />}
-                  </button>
+                  </a>
                 </li>
               ))}
 
@@ -258,14 +252,22 @@ function Navbar({
 
 // ─── Footer ────────────────────────────────────────────────────────────────────
 
-function Footer({ navigate }: { navigate: (p: Page) => void }) {
+const FOOTER_PRACTICE_GROUPS = [
+  { label: "Accounting & Bookkeeping", sectionId: "accounting" },
+  { label: "VAT Compliance", sectionId: "vat" },
+  { label: "Corporate Tax", sectionId: "corporate-tax" },
+  { label: "Internal Audit", sectionId: "internal-audit" },
+  { label: "Business Advisory", sectionId: "advisory" },
+];
+
+function Footer({ navigate }: { navigate: (p: Page, sectionId?: string) => void }) {
   return (
     <footer className="bg-slate-950 text-white border-t border-slate-900">
       <div className="max-w-7xl mx-auto px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12">
           <div className="lg:col-span-2 space-y-4">
             <div className="bg-white p-2.5 inline-block rounded-xl shadow-md">
-              <img src={logo2} alt="MJS Logo" className="h-16 md:h-20 w-auto object-contain" />
+              <img src={logo2} alt="MJS Logo" loading="lazy" className="h-16 md:h-20 w-auto object-contain" />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed">
               Dubai-based accounting, auditing, and tax firm providing reliable financial, VAT, Corporate Tax, and business advisory services for UAE enterprises.
@@ -295,13 +297,13 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
             <ul className="space-y-3">
               {NAV_LINKS.map(({ label, page }) => (
                 <li key={page}>
-                  <button
-                    onClick={() => navigate(page)}
+                  <a
+                    {...pageLink(page, navigate)}
                     className="text-sm text-slate-400 hover:text-white transition-colors flex items-start gap-2.5 text-left w-full group"
                   >
                     <ChevronRight size={12} className="text-red-500 shrink-0 mt-1 group-hover:translate-x-0.5 transition-transform" />
                     <span>{label}</span>
-                  </button>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -310,15 +312,15 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
           <div>
             <h4 className="text-xs font-bold tracking-widest uppercase text-red-500 mb-5">Practice Groups</h4>
             <ul className="space-y-3">
-              {["Accounting & Bookkeeping", "VAT Compliance", "Corporate Tax", "Internal Audit", "Business Advisory"].map((s) => (
-                <li key={s}>
-                  <button
-                    onClick={() => navigate("services")}
+              {FOOTER_PRACTICE_GROUPS.map(({ label, sectionId }) => (
+                <li key={sectionId}>
+                  <a
+                    {...pageLink("services", navigate, { sectionId })}
                     className="text-sm text-slate-400 hover:text-white transition-colors flex items-start gap-2.5 text-left w-full group"
                   >
                     <ChevronRight size={12} className="text-red-500 shrink-0 mt-1 group-hover:translate-x-0.5 transition-transform" />
-                    <span>{s}</span>
-                  </button>
+                    <span>{label}</span>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -370,8 +372,8 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
               <li className="flex gap-3">
                 <Phone size={16} className="text-red-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <div>+971 56 152 9421</div>
-                  <div>+971 54 578 4786</div>
+                  <div><a href="tel:+971561529421" className="hover:text-white transition-colors">+971 56 152 9421</a></div>
+                  <div><a href="tel:+971545784786" className="hover:text-white transition-colors">+971 54 578 4786</a></div>
                 </div>
               </li>
             </ul>
@@ -379,7 +381,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
         </div>
 
         <div className="border-t border-slate-900 mt-12 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} M J S Accounting & Auditing L.L.C. All rights reserved.</p>
+          <p suppressHydrationWarning>© {new Date().getFullYear()} M J S Accounting & Auditing L.L.C. All rights reserved.</p>
           <p>UAE-Based Accounting & Taxation Firm • Audit Reports Arranged via Licensed Partners</p>
         </div>
       </div>
@@ -1001,8 +1003,8 @@ function ContactPage() {
                 <div>
                   <div className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Phone & WhatsApp</div>
                   <div className="text-slate-800 font-medium space-y-1">
-                    <div>+971 56 152 9421</div>
-                    <div>+971 54 578 4786</div>
+                    <div><a href="tel:+971561529421" className="hover:text-red-600 transition-colors">+971 56 152 9421</a></div>
+                    <div><a href="tel:+971545784786" className="hover:text-red-600 transition-colors">+971 54 578 4786</a></div>
                   </div>
                 </div>
               </div>
@@ -1175,22 +1177,16 @@ const getInitialPage = (): Page => {
   return "home";
 };
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState<Page>(getInitialPage);
+// `initialPage` is passed when pre-rendering each page to static HTML at build time.
+export default function App({ initialPage }: { initialPage?: Page } = {}) {
+  const [currentPage, setCurrentPage] = useState<Page>(() => initialPage ?? getInitialPage());
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
 
-  // Set favicon dynamically
+  // Keep title, description and canonical URL in sync with the current page.
   useEffect(() => {
-    let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      link.type = "image/png";
-      document.head.appendChild(link);
-    }
-    link.href = mjsFavicon;
-  }, []);
+    applyPageHead(currentPage);
+  }, [currentPage]);
 
   useEffect(() => {
     const handlePopState = () => {

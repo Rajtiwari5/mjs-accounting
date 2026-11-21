@@ -1,1 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+/* The site uses Tailwind's default font stacks (Georgia-style serif headings, system sans body).
+   A Google Fonts import (Playfair Display, Inter, DM Mono) used to sit here, but no style ever
+   applied those families, so it only delayed the first paint. To use one of them, add a <link>
+   in index.html and set --font-serif / --font-sans in theme.css. */
