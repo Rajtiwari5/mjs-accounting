@@ -13,6 +13,8 @@ import {
   Filter,
 } from "lucide-react";
 import { NEWS_ARTICLES, NewsArticle } from "../data/newsData";
+import { articlePath } from "../seo";
+import { spaLink } from "../links";
 
 interface UpdatesPageProps {
   onSelectArticle: (article: NewsArticle) => void;
@@ -132,13 +134,13 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
                 <span>{NEWS_ARTICLES[0].readTime}</span>
               </div>
               <div className="pt-2 flex flex-wrap gap-4">
-                <button
-                  onClick={() => onSelectArticle(NEWS_ARTICLES[0])}
+                <a
+                  {...spaLink(articlePath(NEWS_ARTICLES[0].slug), () => onSelectArticle(NEWS_ARTICLES[0]))}
                   className="bg-[#c8102e] hover:bg-[#a60d25] text-white font-bold text-sm px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2"
                 >
                   <span>Read Full Update</span>
                   <ArrowRight size={16} />
-                </button>
+                </a>
               </div>
             </div>
             <div className="lg:col-span-4 bg-slate-800/90 border border-slate-700/80 p-6 rounded-2xl space-y-4">
@@ -149,12 +151,12 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
               <p className="text-xs text-slate-300 leading-relaxed">
                 {NEWS_ARTICLES[0].document?.note ?? "Read the regulatory summary and linked source materials."}
               </p>
-              <button
-                onClick={() => onSelectArticle(NEWS_ARTICLES[0])}
-                className="w-full text-center bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-xl transition-colors"
+              <a
+                {...spaLink(articlePath(NEWS_ARTICLES[0].slug), () => onSelectArticle(NEWS_ARTICLES[0]))}
+                className="block w-full text-center bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold py-3 rounded-xl transition-colors"
               >
                 View Source & Analysis
-              </button>
+              </a>
             </div>
           </motion.div>
         )}
@@ -169,17 +171,7 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: idx * 0.08 }}
               whileHover={{ y: -6 }}
-              role="button"
-              tabIndex={0}
-              aria-label={`Read update: ${article.title}`}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelectArticle(article);
-                }
-              }}
-              onClick={() => onSelectArticle(article)}
-              className="group cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 transition-all flex flex-col justify-between"
+              className="group relative cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl hover:border-red-300 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-[#c8102e]/50 transition-all flex flex-col justify-between"
             >
               <div className="p-6 sm:p-7">
                 {/* Category & Badge */}
@@ -212,7 +204,13 @@ export function UpdatesPage({ onSelectArticle, onConsultationRequest }: UpdatesP
                 </div>
 
                 <h3 className="text-lg font-bold font-serif text-slate-900 group-hover:text-[#c8102e] transition-colors leading-snug mb-3">
-                  {article.title}
+                  {/* The link stretches over the whole card, so the card stays clickable */}
+                  <a
+                    {...spaLink(articlePath(article.slug), () => onSelectArticle(article))}
+                    className="after:absolute after:inset-0 focus-visible:outline-none"
+                  >
+                    {article.title}
+                  </a>
                 </h3>
 
                 <p className="text-slate-600 text-sm leading-relaxed line-clamp-3">

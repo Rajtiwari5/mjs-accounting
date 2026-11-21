@@ -2,6 +2,10 @@ import React from "react";
 import { motion } from "motion/react";
 import { Calendar, User, ArrowRight, MessageSquare, Newspaper, Sparkles } from "lucide-react";
 import { NEWS_ARTICLES, NewsArticle } from "../data/newsData";
+import { articlePath } from "../seo";
+import { spaLink } from "../links";
+
+const EMPLOYEE_EXPENSES_GUIDE = NEWS_ARTICLES.find((article) => article.id === "news-fta-17-2026")!;
 
 interface NewsSectionProps {
   onSelectArticle: (article: NewsArticle) => void;
@@ -37,13 +41,13 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
             </p>
             {onViewAllNews && (
               <div>
-                <button
-                  onClick={onViewAllNews}
+                <a
+                  {...spaLink("/updates", onViewAllNews)}
                   className="inline-flex items-center gap-2 text-sm font-bold text-[#c8102e] hover:text-[#a60d25] transition-colors group"
                 >
                   <span>Explore All Regulatory Updates</span>
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </button>
+                </a>
               </div>
             )}
           </div>
@@ -59,17 +63,7 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: idx * 0.12 }}
               whileHover={{ y: -8 }}
-              role="button"
-              tabIndex={0}
-              aria-label={`Read article: ${article.title}`}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelectArticle(article);
-                }
-              }}
-              onClick={() => onSelectArticle(article)}
-              className="group cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:border-red-300 transition-all duration-300 flex flex-col justify-between"
+              className="group relative cursor-pointer bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:border-red-300 has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-[#c8102e]/50 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 {/* Content */}
@@ -107,7 +101,13 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
 
                   {/* Title */}
                   <h3 className="text-lg sm:text-xl font-bold font-serif text-slate-900 group-hover:text-[#c8102e] transition-colors leading-snug mb-3 line-clamp-2">
-                    {article.title}
+                    {/* The link stretches over the whole card, so the card stays clickable */}
+                    <a
+                      {...spaLink(articlePath(article.slug), () => onSelectArticle(article))}
+                      className="after:absolute after:inset-0 focus-visible:outline-none"
+                    >
+                      {article.title}
+                    </a>
                   </h3>
 
                   {/* Excerpt */}
@@ -148,13 +148,13 @@ export function NewsSection({ onSelectArticle, onViewAllNews }: NewsSectionProps
             </div>
           </div>
 
-          <button
-            onClick={() => onSelectArticle(NEWS_ARTICLES.find((article) => article.id === "news-fta-17-2026")!)}
+          <a
+            {...spaLink(articlePath(EMPLOYEE_EXPENSES_GUIDE.slug), () => onSelectArticle(EMPLOYEE_EXPENSES_GUIDE))}
             className="bg-[#c8102e] hover:bg-[#a60d25] text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-lg transition-all flex items-center gap-2 shrink-0 group whitespace-nowrap"
           >
             <span>Read Employee Expenses Guide</span>
             <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-          </button>
+          </a>
         </motion.div>
       </div>
     </section>

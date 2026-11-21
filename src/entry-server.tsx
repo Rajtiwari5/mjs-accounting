@@ -1,10 +1,10 @@
-// Build-time entry used by scripts/prerender.mjs to turn each page into static HTML.
+// Build-time entry used by scripts/prerender.mjs to turn each page and article into static HTML.
 import { renderToString } from "react-dom/server";
 import App from "./app/App";
-import { type Page, PAGE_TO_PATH, SITE_URL, renderHeadTags } from "./app/seo";
+import { type Route, ROUTES, SITE_URL, renderHeadTags, routeLastmod, routePath } from "./app/seo";
 
-export function render(page: Page): string {
-  return renderToString(<App initialPage={page} />);
+export function render(route: Route): string {
+  return renderToString(<App initialRoute={route} />);
 }
 
-export { PAGE_TO_PATH, SITE_URL, renderHeadTags };
+export { ROUTES, SITE_URL, renderHeadTags, routeLastmod, routePath };

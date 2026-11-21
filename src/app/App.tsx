@@ -1,4 +1,4 @@
-import { useState, useEffect, type MouseEvent } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Menu,
@@ -33,7 +33,17 @@ import {
 } from "lucide-react";
 import logo1 from "./components/public/logo1.png";
 import logo2 from "./components/public/logo2.png";
-import { type Page, PAGE_TO_PATH, PATH_TO_PAGE, applyPageHead } from "./seo";
+import {
+  type Page,
+  type Route,
+  PAGE_TO_PATH,
+  PATH_TO_PAGE,
+  applyPageHead,
+  articlePath,
+  getArticle,
+  routeFromPath,
+} from "./seo";
+import { spaLink } from "./links";
 import { WhatsAppButton } from "./components/WhatsAppButton";
 import { Testimonials } from "./components/Testimonials";
 import { ClientLogos } from "./components/ClientLogos";
@@ -45,7 +55,7 @@ import { InteractiveIndustryHub } from "./components/InteractiveIndustryHub";
 import { InteractiveFAQ } from "./components/InteractiveFAQ";
 import { EngagementProcess } from "./components/EngagementProcess";
 import { NewsSection } from "./components/NewsSection";
-import { NewsDetailModal } from "./components/NewsDetailModal";
+import { ArticlePage } from "./components/ArticlePage";
 import { BottomTicker } from "./components/BottomTicker";
 import { TopBar } from "./components/TopBar";
 import { UpdatesPage } from "./components/UpdatesPage";
@@ -58,16 +68,11 @@ function pageLink(
   options: { sectionId?: string; onNavigate?: () => void } = {},
 ) {
   const { sectionId, onNavigate } = options;
-  return {
-    href: sectionId ? `${PAGE_TO_PATH[page]}#${sectionId}` : PAGE_TO_PATH[page],
-    onClick: (e: MouseEvent<HTMLAnchorElement>) => {
-      // Let the browser handle new-tab / new-window clicks.
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      e.preventDefault();
-      navigate(page, sectionId);
-      onNavigate?.();
-    },
-  };
+  const href = sectionId ? `${PAGE_TO_PATH[page]}#${sectionId}` : PAGE_TO_PATH[page];
+  return spaLink(href, () => {
+    navigate(page, sectionId);
+    onNavigate?.();
+  });
 }
 
 const NAV_LINKS: { label: string; page: Page }[] = [
@@ -1159,38 +1164,38 @@ function ContactPage() {
 
 // ─── Main App Component ────────────────────────────────────────────────────────
 
-const getInitialPage = (): Page => {
-  if (typeof window === "undefined") return "home";
-  
-  // Clean pathname
-  const rawPath = window.location.pathname.toLowerCase();
-  const path = rawPath === "/" ? "/" : rawPath.replace(/\/$/, "");
-  if (PATH_TO_PAGE[path]) return PATH_TO_PAGE[path];
-  
+const getInitialRoute = (): Route => {
+  if (typeof window === "undefined") return { page: "home" };
+
+  // Pages and articles (/updates/<slug>)
+  const fromPath = routeFromPath(window.location.pathname);
+  if (fromPath) return fromPath;
+
   // Clean hash fallback
   const hash = window.location.hash.toLowerCase().replace(/^#\/?/, "");
   if (hash) {
-    if (PATH_TO_PAGE["/" + hash]) return PATH_TO_PAGE["/" + hash];
-    if (PATH_TO_PAGE[hash]) return PATH_TO_PAGE[hash];
+    if (PATH_TO_PAGE["/" + hash]) return { page: PATH_TO_PAGE["/" + hash] };
+    if (PATH_TO_PAGE[hash]) return { page: PATH_TO_PAGE[hash] };
   }
 
-  return "home";
+  return { page: "home" };
 };
 
-// `initialPage` is passed when pre-rendering each page to static HTML at build time.
-export default function App({ initialPage }: { initialPage?: Page } = {}) {
-  const [currentPage, setCurrentPage] = useState<Page>(() => initialPage ?? getInitialPage());
+// `initialRoute` is passed when pre-rendering each page to static HTML at build time.
+export default function App({ initialRoute }: { initialRoute?: Route } = {}) {
+  const [route, setRoute] = useState<Route>(() => initialRoute ?? getInitialRoute());
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
+  const currentPage = route.page;
+  const currentArticle = getArticle(route.articleSlug);
 
   // Keep title, description and canonical URL in sync with the current page.
   useEffect(() => {
-    applyPageHead(currentPage);
-  }, [currentPage]);
+    applyPageHead(route);
+  }, [route]);
 
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPage(getInitialPage());
+      setRoute(getInitialRoute());
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -1214,7 +1219,7 @@ export default function App({ initialPage }: { initialPage?: Page } = {}) {
   }, []);
 
   const navigate = (page: Page, serviceId?: string) => {
-    setCurrentPage(page);
+    setRoute({ page });
     const targetPath = PAGE_TO_PATH[page] || "/";
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, "", targetPath);
@@ -1227,6 +1232,16 @@ export default function App({ initialPage }: { initialPage?: Page } = {}) {
         if (el) el.scrollIntoView({ behavior: "smooth" });
       }, 300);
     }
+  };
+
+  // Each article has its own page at /updates/<slug>.
+  const openArticle = (article: NewsArticle) => {
+    setRoute({ page: "updates", articleSlug: article.slug });
+    const targetPath = articlePath(article.slug);
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({}, "", targetPath);
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -1242,14 +1257,23 @@ export default function App({ initialPage }: { initialPage?: Page } = {}) {
         {currentPage === "home" && (
           <HomePage
             navigate={navigate}
-            onSelectArticle={(art) => setSelectedArticle(art)}
+            onSelectArticle={openArticle}
           />
         )}
         {currentPage === "about" && <AboutPage navigate={navigate} />}
         {currentPage === "services" && <ServicesPage navigate={navigate} />}
-        {currentPage === "updates" && (
+        {currentPage === "updates" && !currentArticle && (
           <UpdatesPage
-            onSelectArticle={(art) => setSelectedArticle(art)}
+            onSelectArticle={openArticle}
+            onConsultationRequest={() => navigate("contact")}
+          />
+        )}
+        {currentPage === "updates" && currentArticle && (
+          <ArticlePage
+            article={currentArticle}
+            onSelectArticle={openArticle}
+            onNavigateHome={() => navigate("home")}
+            onBackToUpdates={() => navigate("updates")}
             onConsultationRequest={() => navigate("contact")}
           />
         )}
@@ -1263,20 +1287,12 @@ export default function App({ initialPage }: { initialPage?: Page } = {}) {
       {/* Persistent Bottom Scrolling Ticker Bar */}
       <BottomTicker
         onConsultationRequest={() => navigate("contact")}
-        onSelectHeadline={() => setSelectedArticle(NEWS_ARTICLES[0])}
-      />
-
-      {/* News Article Detail Modal */}
-      <NewsDetailModal
-        article={selectedArticle}
-        onClose={() => setSelectedArticle(null)}
-        onSelectArticle={(art) => setSelectedArticle(art)}
-        onConsultationRequest={() => navigate("contact")}
+        onSelectHeadline={() => openArticle(NEWS_ARTICLES[0])}
       />
 
       {/* Interactive Search Modal */}
       <SearchModal
-        onSelectArticle={setSelectedArticle}
+        onSelectArticle={openArticle}
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onNavigate={(page, serviceId) => navigate(page, serviceId)}
